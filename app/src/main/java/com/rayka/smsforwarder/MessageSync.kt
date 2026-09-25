@@ -12,6 +12,10 @@ import org.json.JSONObject
  */
 object MessageSync {
 
+    // The "sub_id" column exists in the SMS content provider but isn't exposed
+    // as a public constant on Telephony.Sms, so we reference it by raw name.
+    private const val COLUMN_SUB_ID = "sub_id"
+
     private fun payloadFor(r: MessageRecord): JSONObject = JSONObject().apply {
         put("sender", r.sender)
         put("message", r.body)
@@ -70,7 +74,7 @@ object MessageSync {
      */
     fun catchUpMissedSms(context: Context) {
         val since = Prefs.lastSmsTimestamp
-        val projection = arrayOf(Telephony.Sms._ID, Telephony.Sms.ADDRESS, Telephony.Sms.BODY, Telephony.Sms.DATE, Telephony.Sms.SUB_ID)
+        val projection = arrayOf(Telephony.Sms._ID, Telephony.Sms.ADDRESS, Telephony.Sms.BODY, Telephony.Sms.DATE, COLUMN_SUB_ID)
         try {
             context.contentResolver.query(
                 Telephony.Sms.Inbox.CONTENT_URI,
@@ -83,7 +87,7 @@ object MessageSync {
                 val idxAddr = c.getColumnIndex(Telephony.Sms.ADDRESS)
                 val idxBody = c.getColumnIndex(Telephony.Sms.BODY)
                 val idxDate = c.getColumnIndex(Telephony.Sms.DATE)
-                val idxSub = c.getColumnIndex(Telephony.Sms.SUB_ID)
+                val idxSub = c.getColumnIndex(COLUMN_SUB_ID)
                 while (c.moveToNext()) {
                     val smsId = if (idxId >= 0) c.getString(idxId) else c.position.toString()
                     val addr = if (idxAddr >= 0) c.getString(idxAddr) ?: "" else ""
